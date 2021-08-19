@@ -1,5 +1,7 @@
 // TODO: 
 // Add imports here, then do steps 1, 2, and 3.
+import NonFungibleToken from Flow.NonFungibleToken
+import KittyItems from Project.KittyItems
 
 // This transction uses the NFTMinter resource to mint a new NFT.
 //
@@ -14,16 +16,18 @@ transaction(recipient: Address, typeID: UInt64) {
     let receiver: &{NonFungibleToken.CollectionPublic}
 
     prepare(signer: AuthAccount) {
-
         // 1) borrow a reference to the NFTMinter resource in the signer's storage
-        
+        self.minter = signer.borrow<&KittyItems.NFTMinter>(from: KittyItems.MinterStoragePath) 
+                        ?? panic("Signer is not the item admin")
+
         // 2) borrow a public reference to the recipient's Kitty Items Collection
-        
+        self.receiver = getAccount(recipient).getCapability(KittyItems.CollectionPublicPath)
+                            .borrow<&{NonFungibleToken.CollectionPublic}>() 
+                            ?? panic("Couldn't borrow kitty items collection reference")
     }
 
     execute {
-
         // 3) mint the NFT and deposit it into the recipient's Collection
-        
+        self.minter.mintNFT(recipient: self.receiver, typeID: typeID)
     }
 }
